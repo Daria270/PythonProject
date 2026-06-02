@@ -59,6 +59,56 @@ def test_success_registration_with_kafka_producer(mail: MailApi, kafka_producer:
     else:
         raise AssertionError("Email not found")
 
+    # Домашнее задание_1
+    def test_register_events_error_consumer(account: AccountApi, mail: MailApi, kafka_producer: Producer) -> None:
+        base = uuid.uuid4().hex
+        login = f"login_{base}"
+        email = f"{base}@mail.ru"
+
+        message = {
+
+            "input_data": {
+                "login": login,
+                "email": mail,
+                "password": "123123123"
+            },
+            "error_message": {
+                "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                "title": "Validation failed",
+                "status": 400,
+                "traceId": "00-2bd2ede7c3e4dcf40c4b7a62ac23f448-839ff284720ea656-01",
+                "errors": {
+                    "Email": ["Invalid"]
+                }
+            },
+            "error_type": "unknown"
+        }
+
+        # отправка сообщения в топик
+        kafka_producer.send_put(topic="register-events-errors", input_data=message)
+        # topic - название топика в кафке, в value сообщение, value: можно вынести в фикстуру
+
+        # Опрос почтового сервера
+        email_found = False
+        for _ in range(10):
+            response = mail.find_message(query=email)
+            if response.json()["total"] > 0:
+                email_found = True
+                break
+            time.sleep(1)
+
+        assert email_found, f"Письмо на адрес {email} не пришло на почтовый сервер!"
+
+        # активацию пользователя с помощью метода PUT /user/activate
+
+        activate_response = account.activate_user(login=login, email=email)
+
+        # проверка статуса сообщения
+        assert activate_response.status_code in (200, 204), \
+            f"Ошибка активации: {activate_response.status_code} - {activate_response.text}"
+
+
+
 
 
 
