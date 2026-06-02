@@ -16,4 +16,12 @@ class AccountApi:
         print(response.content)
         return response
 
+    def activate_user(self, login: str, email: str) -> httpx.Response:
+        data = {
+            "login": login,
+            "email": email
+        }
+        response = self._client.put("/user/activate", json=data)
+        return response
+
 
