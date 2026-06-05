@@ -37,29 +37,29 @@ class Producer(Singleton):
             self._producer = None
 
 
-    def send_get(self, topic: str, message: dict[str, str]) -> None:
+    def send(self, topic: str, message: dict[str, str]) -> None:
         if not self._producer:
             raise RuntimeError("Producer is not started")
 
         try:
             with self._lock:
-                future = self._producer.send(topic, value=message)
+                future = self._producer.send(topic, message)
                 record_metadata = future.get(timeout=10)
                 return record_metadata
         except Exception as e:
             raise RuntimeError(f"Failed to send message to Kafka: {e}")
 
-    def send_put(self, topic: str, input_data: dict) -> None:
-        if not self._producer:
-            raise RuntimeError("Producer is not started")
-
-        try:
-            with self._lock:
-                future = self._producer.send(topic, value=input_data)
-                record_metadata = future.get(timeout=10)
-                return record_metadata
-        except Exception as e:
-            raise RuntimeError(f"Failed to send message to Kafka: {e}")
+    # def send_put(self, topic: str, input_data: dict) -> None:
+    #     if not self._producer:
+    #         raise RuntimeError("Producer is not started")
+    #
+    #     try:
+    #         with self._lock:
+    #             future = self._producer.send(topic, value=input_data)
+    #             record_metadata = future.get(timeout=10)
+    #             return record_metadata
+    #     except Exception as e:
+    #         raise RuntimeError(f"Failed to send message to Kafka: {e}")
 
     def __enter__(self) -> "Producer":
         self.start()

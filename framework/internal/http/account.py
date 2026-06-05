@@ -16,12 +16,20 @@ class AccountApi:
         print(response.content)
         return response
 
-    def activate_user(self, login: str, email: str) -> httpx.Response:
-        data = {
-            "login": login,
-            "email": email
-        }
-        response = self._client.put("/user/activate", json=data)
-        return response
+    # def activate_user(self, login: str, email: str) -> httpx.Response:
+    #     data = {
+    #         "login": login,
+    #         "email": email
+    #     }
+    #     response = self._client.put("/user/activate", json=data)
+    #     return response
+
+    def get_user(self, login: str | None = None, email: str | None = None) -> httpx.Response:
+        if login:
+            return self._client.get(f"/user/{login}")
+        elif email:
+            return self._client.get("/user/activate", params={"email": email})
+        else:
+            raise ValueError("Нужно указать либо login, либо email")
 
 
