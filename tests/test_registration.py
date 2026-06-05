@@ -1,9 +1,11 @@
+import json
 import time
 import uuid
 
 from framework.internal.http.account import AccountApi
 from framework.internal.http.mail import MailApi
 from framework.internal.kafka.producer import Producer
+from kafka import KafkaConsumer
 
 
 def test_failed_registration(account: AccountApi, mail: MailApi) -> None:
@@ -36,7 +38,7 @@ def test_success_registration_with_kafka_producer(mail: MailApi, kafka_producer:
         "password": "123123123"
     }
 
-    kafka_producer.send(topic="register-events", message=message)
+    kafka_producer.send("register-events", message=message)
     # topic - название топика в кафке, в value сообщение, value: можно вынести в фикстуру
     for _ in range(10):
         response = mail.find_message(query=base)
@@ -45,6 +47,30 @@ def test_success_registration_with_kafka_producer(mail: MailApi, kafka_producer:
         time.sleep(1)
     else:
         raise AssertionError("Email not found")
+
+def test_success_registration_with_kafka_producer_consumer(kafka_producer: Producer) -> None:
+    base = uuid.uuid4().hex
+    message: dict[str, str] = {
+        "login": base,
+        "email": f"{base}@mail.ru",
+        "password": "123123123"
+    }
+
+    kafka_producer.send("register-events", message)
+
+    consumer = KafkaConsumer(
+        "register-events",
+        bootstrap_servers=["185.185.143.231:9092"],
+        auto_offset_reset="earliest",
+        value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+    )
+
+    for message in consumer:
+        if message.value["login"] == base:
+            break
+    consumer.close()
+
+
 
     # Домашнее задание_1
 
@@ -73,7 +99,7 @@ def test_register_events_error_consumer(account: AccountApi, mail: MailApi, kafk
         "error_type": "unknown"
     }
 
-    kafka_producer.send(topic="register-events", message=message)
+    kafka_producer.send("register-events", message=message)
     # topic - название топика в кафке, в value сообщение, value: можно вынести в фикстуру
 
     # Опрос почтового сервера
