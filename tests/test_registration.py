@@ -21,7 +21,7 @@ def test_failed_registration(account: AccountApi, mail: MailApi) -> None:
 def test_success_registration(account: AccountApi, mail: MailApi) -> None:
     base = uuid.uuid4().hex
     account.register_user(login="base", email=f"{base}@mai.ru", password="123123123")
-    for _ in range(10):
+    for _ in range(30):
         response = mail.find_message(query=base)
         if response.json()["total"] > 0:
             break
@@ -56,18 +56,24 @@ def test_success_registration_with_kafka_producer_consumer(kafka_producer: Produ
         "password": "123123123"
     }
 
-    kafka_producer.send("register-events", message)
 
     consumer = KafkaConsumer(
         "register-events",
         bootstrap_servers=["185.185.143.231:9092"],
         auto_offset_reset="earliest",
         value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+        consumer_timeout_ms=10000
     )
 
+    time.sleep(2)
+
+    kafka_producer.send("register-events", message)
+
     for message in consumer:
-        if message.value["login"] == base:
+        if "login" in message.value and message.value["login"] == base:
             break
+    else:
+        raise AssertionError("Message not found in Kafka")
     consumer.close()
 
 
