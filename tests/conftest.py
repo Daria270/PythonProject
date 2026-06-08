@@ -1,6 +1,6 @@
 import sys
 import os
-from kafka.benchmarks.load_example import Producer
+#from kafka.benchmarks.load_example import Producer
 import pytest
 from framework.internal.http.account import AccountApi
 from framework.internal.http.mail import MailApi
