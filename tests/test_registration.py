@@ -20,7 +20,7 @@ def test_failed_registration(account: AccountApi, mail: MailApi) -> None:
 
 def test_success_registration(account: AccountApi, mail: MailApi) -> None:
     base = uuid.uuid4().hex
-    account.register_user(login="base", email=f"{base}@mai.ru", password="123123123")
+    account.register_user(login="base", email=f"{base}@mail.ru", password="123123123")
     for _ in range(30):
         response = mail.find_message(query=base)
         if response.json()["total"] > 0:
